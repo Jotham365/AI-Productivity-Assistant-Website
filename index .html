@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deskclerk — an assistant for the parts of work you'd rather not do alone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2A4A;
+    --ink-soft:#334469;
+    --ink-deep:#0F1B33;
+    --paper:#0A0E17;
+    --paper-dark:#0F1420;
+    --sheet:#F7F4EC;
+    --rule:#C9C2A9;
+    --amber:#B8722E;
+    --amber-deep:#96591F;
+    --amber-bright:#D98A3D;
+    --sage:#5B7F5E;
+    --charcoal:#2A2620;
+    --charcoal-soft:#5C564A;
+    --alert:#A8433A;
+    --paper-ink:#E7EAF2;
+    --paper-ink-soft:#9BA3BC;
+    --radius-sm:3px;
+    --radius-md:6px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--charcoal);
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(184,114,46,.10), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    min-height:100vh;
+  }
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+  button{font-family:inherit;}
+  ::selection{background:var(--amber);color:var(--sheet);}
+
+  a{color:var(--amber-deep);}
+
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* Sidebar */
+  .sidebar{
+    width:236px;
+    flex-shrink:0;
+    background:var(--paper-dark);
+    border-right:1px solid var(--rule);
+    display:flex;
+    flex-direction:column;
+    padding:24px 0 16px;
+  }
+  .brand{
+    padding:0 20px 20px;
+    border-bottom:1px solid var(--rule);
+    margin-bottom:8px;
+  }
+  .brand .mark{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:42px;height:42px;
+    background:radial-gradient(circle at 32% 28%, var(--ink-soft), var(--ink) 60%, var(--ink-deep));
+    color:var(--sheet);
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:20px;
+    border-radius:50%;
+    margin-bottom:12px;
+    box-shadow:
+      0 0 0 1px var(--rule),
+      0 0 0 4px var(--paper-dark),
+      0 6px 12px -6px rgba(15,27,51,.55);
+  }
+  .brand .mark::after{
+    content:"";
+    position:absolute;
+    inset:4px;
+    border:1px solid rgba(247,244,236,.35);
+    border-radius:50%;
+  }
+  .brand h1{
+    font-size:22px;
+    margin:0 0 5px;
+    color:var(--ink);
+    font-weight:600;
+    letter-spacing:-.01em;
+  }
+  .brand p{
+    margin:0;
+    font-size:12.5px;
+    color:var(--charcoal-soft);
+    line-height:1.55;
+    max-width:22ch;
+  }
+
+  nav{flex:1;padding:14px 10px;}
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    width:100%;
+    text-align:left;
+    padding:10px 12px;
+    margin-bottom:4px;
+    background:transparent;
+    border:1px solid transparent;
+    border-radius:var(--radius-sm);
+    color:var(--charcoal);
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+    position:relative;
+    transition:background .15s ease, transform .1s ease, border-color .15s ease;
+  }
+  .nav-item .ic{
+    width:17px;height:17px;
+    flex-shrink:0;
+    color:var(--charcoal-soft);
+    transition:color .15s ease;
+  }
+  .nav-item:hover{background:rgba(247,244,236,.6);}
+  .nav-item:active{transform:scale(.98);}
+  .nav-item.active{
+    background:var(--sheet);
+    border-color:var(--rule);
+    color:var(--ink);
+    box-shadow:0 2px 6px -3px rgba(27,42,74,.25);
+  }
+  .nav-item.active::before{
+    content:"";
+    position:absolute;
+    left:-11px;
+    top:9px;bottom:9px;
+    width:3px;
+    background:var(--amber);
+    border-radius:2px;
+    box-shadow:0 0 0 3px rgba(184,114,46,.15);
+  }
+  .nav-item.active .ic{color:var(--amber-deep);}
+
+  .sidebar-foot{
+    padding:14px 18px 4px;
+    border-top:1px solid var(--rule);
+    font-size:11.5px;
+    line-height:1.6;
+    color:var(--charcoal-soft);
+  }
+  .sidebar-foot button{
+    background:none;border:none;padding:0;
+    color:var(--amber-deep);font-size:11.5px;font-weight:600;
+    cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+    text-decoration-color:rgba(150,89,31,.4);
+    transition:text-decoration-color .15s ease;
+  }
+  .sidebar-foot button:hover{text-decoration-color:var(--amber-deep);}
+
+  /* Main */
+  main{
+    flex:1;
+    padding:32px 40px 60px;
+    max-width:920px;
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .panel.panel-enter{opacity:0;transform:translateY(6px);}
+  .panel.panel-enter-active{
+    opacity:1;transform:translateY(0);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+
+  .panel-head{
+    margin-bottom:30px;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--rule);
+    position:relative;
+  }
+  .panel-head p{
+    margin:0;
+    color:var(--charcoal-soft);
+    font-size:15px;
+    max-width:60ch;
+    line-height:1.65;
+  }
+  .dash-hero{
+    position:relative;
+    padding:8px 0 26px;
+  }
+  .dash-hero .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:12.5px;
+    color:var(--amber-deep);
+    font-weight:600;
+    margin-bottom:14px;
+  }
+  .dash-hero .eyebrow::before{
+    content:"";
+    width:16px;height:1px;
+    background:var(--amber);
+  }
+  .dash-hero h2{
+    font-size:44px;
+    line-height:1.12;
+    margin:0 0 16px;
+    color:var(--ink);
+    font-weight:600;
+    letter-spacing:-.015em;
+    max-width:14ch;
+  }
+  .dash-hero .lede{
+    font-size:16.5px;
+    color:var(--charcoal-soft);
+    max-width:56ch;
+    line-height:1.7;
+    margin:0;
+  }
+  .dash-stamp{
+    position:absolute;
+    top:2px; right:6px;
+    width:96px;height:96px;
+    opacity:.9;
+  }
+  @media (max-width:900px){ .dash-stamp{display:none;} }
+
+  .panel[data-panel]:not([data-panel=dashboard]) .panel-head h2{
+    font-size:30px;
+    margin:0 0 8px;
+    color:var(--ink);
+    font-weight:600;
+    letter-spacing:-.01em;
+  }
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field .hint{
+    font-weight:400;
+    color:var(--charcoal-soft);
+    font-size:11.5px;
+  }
+  .field input[type=text], .field textarea, .field select{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:11px 13px;
+    background:var(--sheet);
+    border:1px solid var(--rule);
+    border-radius:var(--radius-sm);
+    color:var(--charcoal);
+    resize:vertical;
+    box-shadow:inset 0 1px 2px rgba(27,42,74,.05);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input[type=text]::placeholder, .field textarea::placeholder{color:#A39B87;}
+  .field input:focus, .field textarea:focus, .field select:focus{
+    outline:none;
+    border-color:var(--amber);
+    box-shadow:0 0 0 3px rgba(184,114,46,.15), inset 0 1px 2px rgba(27,42,74,.05);
+  }
+  .row{display:flex;gap:14px;}
+  .row .field{flex:1;}
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    background:linear-gradient(180deg, var(--ink-soft), var(--ink) 55%, var(--ink-deep));
+    color:var(--sheet);
+    border:none;
+    padding:12px 22px;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.01em;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    box-shadow:0 4px 10px -4px rgba(15,27,51,.5);
+    transition:transform .12s ease, box-shadow .12s ease, background .15s ease;
+  }
+  .btn::after{
+    content:"→";
+    transition:transform .15s ease;
+  }
+  .btn:hover{box-shadow:0 6px 14px -5px rgba(15,27,51,.55);transform:translateY(-1px);}
+  .btn:hover::after{transform:translateX(2px);}
+  .btn:active{transform:translateY(0);box-shadow:0 2px 6px -3px rgba(15,27,51,.5);}
+  .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none;}
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--rule);
+    box-shadow:none;
+  }
+  .btn.secondary::after{content:none;}
+  .btn.secondary:hover{background:var(--sheet);transform:none;box-shadow:none;}
+
+  /* Ledger output sheet */
+  .sheet{
+    position:relative;
+    margin-top:24px;
+    background:
+      linear-gradient(var(--sheet) 0, var(--sheet) 100%),
+      repeating-linear-gradient(var(--sheet), var(--sheet) 30px, var(--rule) 31px, var(--sheet) 32px);
+    border:1px solid var(--rule);
+    border-radius:var(--radius-md);
+    box-shadow:0 1px 0 var(--rule), 0 10px 24px -14px rgba(27,42,74,.45);
+    padding:24px 28px;
+    min-height:80px;
+    font-size:14.5px;
+    line-height:1.85;
+    overflow:hidden;
+    animation:sheetIn .3s ease;
+  }
+  .sheet::before{
+    content:"";
+    position:absolute;
+    top:0; right:0;
+    width:0; height:0;
+    border-style:solid;
+    border-width:0 22px 22px 0;
+    border-color:transparent var(--paper-dark) transparent transparent;
+    box-shadow:-1px 1px 3px rgba(27,42,74,.15);
+  }
+  @keyframes sheetIn{
+    from{opacity:0;transform:translateY(4px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .sheet.empty{
+    display:flex;align-items:center;justify-content:center;
+    color:var(--charcoal-soft);
+    font-style:italic;
+    background:var(--sheet);
+    min-height:120px;
+  }
+  .sheet.empty::before{display:none;}
+  .sheet h1,.sheet h2,.sheet h3{color:var(--ink);margin-top:0;}
+  .sheet ul,.sheet ol{padding-left:22px;}
+  .sheet-actions{display:flex;gap:10px;margin-top:10px;}
+  .sheet-actions button{
+    background:none;border:none;
+    font-size:12px;font-weight:600;
+    color:var(--amber-deep);cursor:pointer;
+    padding:4px 0;
+  }
+
+  .loading{
+    display:flex;align-items:center;gap:10px;
+    color:var(--charcoal-soft);font-size:13.5px;
+    padding:6px 0;
+  }
+  .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--amber);
+    animation:pulse 1s infinite ease-in-out;
+  }
+  .dot:nth-child(2){animation-delay:.15s;}
+  .dot:nth-child(3){animation-delay:.3s;}
+  @keyframes pulse{0%,80%,100%{opacity:.25;}40%{opacity:1;}}
+
+  /* Dashboard */
+  .index-list{border-top:1px solid var(--rule);}
+  .index-item{
+    display:flex;
+    align-items:baseline;
+    gap:18px;
+    padding:20px 10px;
+    margin:0 -10px;
+    border-bottom:1px solid var(--rule);
+    cursor:pointer;
+    border-radius:var(--radius-sm);
+    transition:background .15s ease, padding-left .15s ease;
+  }
+  .index-item:hover{background:rgba(184,114,46,.06);padding-left:16px;}
+  .index-item:hover .index-title{color:var(--amber-deep);}
+  .index-item:hover .index-go{color:var(--amber-deep);transform:translateX(2px);}
+  .index-item .index-num{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:26px;
+    color:var(--rule);
+    width:34px;
+    flex-shrink:0;
+    transition:color .15s ease;
+  }
+  .index-item:hover .index-num{color:var(--amber);}
+  .index-title{
+    font-size:17.5px;font-weight:600;color:var(--ink);
+    margin:0 0 4px;
+    transition:color .15s ease;
+  }
+  .index-desc{margin:0;color:var(--charcoal-soft);font-size:13.5px;line-height:1.5;}
+  .index-go{margin-left:auto;color:var(--charcoal-soft);font-size:13px;flex-shrink:0;align-self:center;transition:transform .15s ease, color .15s ease;}
+
+  .notice{
+    background:var(--sheet);
+    border:1px solid var(--rule);
+    border-left:3px solid var(--sage);
+    border-radius:var(--radius-sm);
+    padding:16px 18px;
+    font-size:13px;
+    color:var(--charcoal-soft);
+    line-height:1.65;
+    margin-top:32px;
+    box-shadow:0 6px 16px -14px rgba(27,42,74,.4);
+  }
+  .notice strong{color:var(--ink);}
+
+  /* Task checklist render */
+  .phase{margin-bottom:18px;}
+  .phase h4{
+    margin:0 0 8px;font-size:13px;
+    text-transform:uppercase;letter-spacing:.04em;
+    color:var(--amber-deep);font-weight:700;
+  }
+  .task-row{
+    display:flex;gap:10px;align-items:flex-start;
+    padding:6px 0;border-bottom:1px dashed var(--rule);
+  }
+  .task-row:last-child{border-bottom:none;}
+  .task-row input{margin-top:4px;}
+  .task-row .t-main{font-weight:600;color:var(--charcoal);font-size:14px;}
+  .task-row .t-sub{color:var(--charcoal-soft);font-size:12.5px;margin-top:2px;}
+
+  /* Chat */
+  .chat-window{
+    background:var(--sheet);
+    border:1px solid var(--rule);
+    border-radius:var(--radius-md);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 8px 20px -16px rgba(27,42,74,.4);
+    height:420px;
+    overflow-y:auto;
+    padding:20px 22px;
+    display:flex;flex-direction:column;gap:16px;
+  }
+  .msg{max-width:78%;font-size:14px;line-height:1.6;animation:msgIn .2s ease;}
+  @keyframes msgIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .msg.user{align-self:flex-end;text-align:right;}
+  .msg .bubble{
+    display:inline-block;
+    padding:11px 15px;
+    border-radius:14px;
+    text-align:left;
+  }
+  .msg.user .bubble{background:linear-gradient(180deg, var(--ink-soft), var(--ink)); color:var(--sheet); border-bottom-right-radius:4px;}
+  .msg.bot .bubble{background:var(--paper); border:1px solid var(--rule); color:var(--charcoal); border-bottom-left-radius:4px;}
+  .chat-input-row{display:flex;gap:10px;margin-top:14px;}
+  .chat-input-row input{flex:1;}
+
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;
+    background:rgba(15,27,51,.55);
+    backdrop-filter:blur(2px);
+    align-items:center;justify-content:center;
+    z-index:50;
+  }
+  .modal-backdrop.open{display:flex;animation:fadeIn .15s ease;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .modal{
+    background:var(--sheet);
+    max-width:440px;width:90%;
+    border-radius:var(--radius-md);
+    padding:28px 30px;
+    border:1px solid var(--rule);
+    box-shadow:0 24px 48px -18px rgba(15,27,51,.5);
+    animation:modalIn .18s ease;
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .modal h3{margin:0 0 14px;color:var(--ink);font-size:19px;}
+  .modal ul{padding-left:20px;font-size:13.5px;line-height:1.75;color:var(--charcoal-soft);}
+  .modal ul li{margin-bottom:8px;}
+  .modal .btn{margin-top:16px;}
+
+  @media (max-width: 760px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;padding:14px;align-items:center;}
+    .brand{border:none;padding:0 14px 0 0;margin:0;}
+    .brand p{display:none;}
+    nav{display:flex;flex-wrap:wrap;padding:0;flex:1;}
+    .nav-item{margin:2px;}
+    .sidebar-foot{display:none;}
+    main{padding:22px 18px 50px;}
+    .row{flex-direction:column;}
+  }
+
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+  /* Legibility on the new blue-black page background (cards/sheets keep their own light bg + dark text) */
+  .brand h1,
+  .dash-hero h2,
+  .panel[data-panel]:not([data-panel=dashboard]) .panel-head h2,
+  .index-title{
+    color:var(--paper-ink);
+  }
+  .brand p,
+  .dash-hero .lede,
+  .panel-head p,
+  .field label,
+  .field .hint,
+  .index-desc,
+  .index-go,
+  .sidebar-foot,
+  .nav-item,
+  .nav-item .ic{
+    color:var(--paper-ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">D</div>
+      <h1>Deskclerk</h1>
+      <p>One place for the small writing and planning jobs that pile up around real work.</p>
+    </div>
+    <nav id="nav"></nav>
+    <div class="sidebar-foot">
+      Deskclerk drafts — it doesn't decide. Check outputs before you send, share, or act on them.
+      <br><button onclick="openEthicsModal()">Read our approach to responsible use</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- Dashboard -->
+    <section class="panel active" data-panel="dashboard">
+      <div class="panel-head dash-hero">
+        <span class="eyebrow">Deskclerk</span>
+        <h2>Good to see you<br>at the desk.</h2>
+        <p class="lede">Five kinds of work that eat a workday without needing much judgment to start: writing, summarizing, planning, looking things up, and answering quick questions. Pick one below.</p>
+        <svg class="dash-stamp" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-dasharray="2.5 3.5"/>
+          <circle cx="50" cy="50" r="37" fill="none" stroke="var(--ink)" stroke-width="1"/>
+          <text x="50" y="47" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-weight="600" font-size="15" fill="var(--ink)">at your</text>
+          <text x="50" y="63" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-weight="600" font-size="15" fill="var(--amber-deep)">service</text>
+        </svg>
+      </div>
+      <div class="index-list" id="dashIndex"></div>
+      <div class="notice"><strong>Before you rely on any of this:</strong> Deskclerk is a drafting tool, not a source of truth. Verify facts, keep confidential or personal information out of your inputs, and review every draft with your own judgment before it goes anywhere.</div>
+    </section>
+
+    <!-- Email -->
+    <section class="panel" data-panel="email">
+      <div class="panel-head">
+        <h2>Email generator</h2>
+        <p>Describe what the email needs to accomplish. Deskclerk drafts it — you decide if it's ready to send.</p>
+      </div>
+      <div class="field">
+        <label>What's this email for?</label>
+        <textarea id="e-purpose" rows="3" placeholder="e.g. Telling my team the launch is delayed a week and explaining why, keeping morale up"></textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Recipient <span class="hint">(who's reading this?)</span></label>
+          <input type="text" id="e-recipient" placeholder="e.g. my direct reports">
+        </div>
+        <div class="field">
+          <label>Tone</label>
+          <select id="e-tone">
+            <option>Warm and direct</option>
+            <option>Formal</option>
+            <option>Friendly and casual</option>
+            <option>Firm</option>
+            <option>Apologetic</option>
+            <option>Persuasive</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Key points to include <span class="hint">(optional — one per line)</span></label>
+        <textarea id="e-points" rows="3" placeholder="e.g.&#10;New date is the 14th&#10;Root cause was a vendor delay, not our team&#10;No action needed from them yet"></textarea>
+      </div>
+      <button class="btn" onclick="runEmail()">Draft the email</button>
+      <div id="e-output"></div>
+    </section>
+
+    <!-- Meetings -->
+    <section class="panel" data-panel="meetings">
+      <div class="panel-head">
+        <h2>Meeting summarizer</h2>
+        <p>Paste raw notes or a transcript. Deskclerk pulls out decisions, owners, and open questions so you don't have to re-read the whole thing later.</p>
+      </div>
+      <div class="field">
+        <label>Notes or transcript</label>
+        <textarea id="m-text" rows="10" placeholder="Paste your meeting notes or transcript here..."></textarea>
+      </div>
+      <button class="btn" onclick="runMeeting()">Summarize</button>
+      <div id="m-output"></div>
+    </section>
+
+    <!-- Tasks -->
+    <section class="panel" data-panel="tasks">
+      <div class="panel-head">
+        <h2>Task planner</h2>
+        <p>Describe a project or goal. Deskclerk breaks it into phases and concrete tasks you can hand to a team or work through yourself.</p>
+      </div>
+      <div class="field">
+        <label>What are you trying to get done?</label>
+        <textarea id="t-goal" rows="3" placeholder="e.g. Move our support docs from Notion to a public help center before end of quarter"></textarea>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Timeframe <span class="hint">(optional)</span></label>
+          <input type="text" id="t-timeframe" placeholder="e.g. 6 weeks">
+        </div>
+        <div class="field">
+          <label>Team size <span class="hint">(optional)</span></label>
+          <input type="text" id="t-team" placeholder="e.g. just me, or a team of 4">
+        </div>
+      </div>
+      <button class="btn" onclick="runTasks()">Build the plan</button>
+      <div id="t-output"></div>
+    </section>
+
+    <!-- Research -->
+    <section class="panel" data-panel="research">
+      <div class="panel-head">
+        <h2>Research assistant</h2>
+        <p>Ask a question that needs a current or well-sourced answer. Deskclerk searches the web and summarizes what it finds, with sources.</p>
+      </div>
+      <div class="field">
+        <label>What do you want to know?</label>
+        <textarea id="r-question" rows="3" placeholder="e.g. What are the current best practices for onboarding remote employees?"></textarea>
+      </div>
+      <button class="btn" onclick="runResearch()">Research it</button>
+      <div id="r-output"></div>
+    </section>
+
+    <!-- Chat -->
+    <section class="panel" data-panel="chat">
+      <div class="panel-head">
+        <h2>Quick chat</h2>
+        <p>For anything that doesn't fit the other tools — a sanity check, a rough idea, a second opinion.</p>
+      </div>
+      <div class="chat-window" id="chatWindow">
+        <div class="msg bot"><div class="bubble">What's on your desk? I can help you think something through, draft a quick reply, or just answer a question.</div></div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn" onclick="sendChat()">Send</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="ethicsModal">
+  <div class="modal">
+    <h3>How Deskclerk approaches AI use</h3>
+    <ul>
+      <li><strong>Humans stay in the loop.</strong> Every draft is a starting point, not a final answer — you review and approve before anything goes out.</li>
+      <li><strong>Keep sensitive data out.</strong> Avoid pasting confidential, personal, or proprietary information you wouldn't want stored or processed by a third-party model.</li>
+      <li><strong>Sources are shown, not hidden.</strong> Research answers link back to where the information came from so you can check it yourself.</li>
+      <li><strong>Outputs can be wrong.</strong> Treat summaries, plans, and facts as a first pass — verify anything that matters before you rely on it.</li>
+    </ul>
+    <button class="btn secondary" onclick="closeEthicsModal()">Close</button>
+  </div>
+</div>
+
+<script>
+const ICONS = {
+  dashboard: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></svg>`,
+  email: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg>`,
+  meetings: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5h16v11H8l-4 3.5v-3.5z"/></svg>`,
+  tasks: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5h9M4 12h9M4 17.5h6"/><path d="m16 5.5 2 2 3.5-3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="16.5" r="3.2"/></svg>`,
+  research: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m19.5 19.5-4.3-4.3" stroke-linecap="round"/></svg>`,
+  chat: `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5h16v10.5H9.5L5 20v-4H4z"/><path d="M8 9.5h8M8 12.5h5" stroke-linecap="round"/></svg>`
+};
+
+const TOOLS = [
+  {id:'dashboard', label:'Dashboard', title:'Dashboard'},
+  {id:'email', label:'Email generator', title:'Email generator', desc:'Draft emails from a few bullet points and a tone.'},
+  {id:'meetings', label:'Meeting summarizer', title:'Meeting summarizer', desc:'Turn raw notes or a transcript into decisions and action items.'},
+  {id:'tasks', label:'Task planner', title:'Task planner', desc:'Break a goal into phased, assignable tasks.'},
+  {id:'research', label:'Research assistant', title:'Research assistant', desc:'Get a sourced summary on a topic you need answered.'},
+  {id:'chat', label:'Quick chat', title:'Quick chat', desc:'Ask anything, get a straight answer.'},
+];
+
+const nav = document.getElementById('nav');
+TOOLS.forEach((t)=>{
+  const b = document.createElement('button');
+  b.className = 'nav-item' + (t.id==='dashboard' ? ' active':'');
+  b.dataset.panel = t.id;
+  b.innerHTML = `${ICONS[t.id]}<span>${t.label}</span>`;
+  b.onclick = ()=>showPanel(t.id);
+  nav.appendChild(b);
+});
+
+const dashIndex = document.getElementById('dashIndex');
+TOOLS.filter(t=>t.id!=='dashboard').forEach((t,i)=>{
+  const row = document.createElement('div');
+  row.className='index-item';
+  row.onclick=()=>showPanel(t.id);
+  row.innerHTML = `
+    <div class="index-num">${String(i+1).padStart(2,'0')}</div>
+    <div style="flex:1">
+      <p class="index-title">${t.title}</p>
+      <p class="index-desc">${t.desc}</p>
+    </div>
+    <div class="index-go">Open →</div>`;
+  dashIndex.appendChild(row);
+});
+
+function showPanel(id){
+  const panel = document.querySelector(`.panel[data-panel="${id}"]`);
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  panel.classList.add('active','panel-enter');
+  requestAnimationFrame(()=> panel.classList.add('panel-enter-active'));
+  setTimeout(()=>panel.classList.remove('panel-enter','panel-enter-active'), 260);
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.panel===id));
+}
+
+function openEthicsModal(){document.getElementById('ethicsModal').classList.add('open');}
+function closeEthicsModal(){document.getElementById('ethicsModal').classList.remove('open');}
+
+// ---------- Claude API helper ----------
+async function callClaude(messages, {system=null, tools=null, maxTokens=1200} = {}){
+  const body = {
+    model: "claude-sonnet-4-6",
+    max_tokens: maxTokens,
+    messages
+  };
+  if(system) body.system = system;
+  if(tools) body.tools = tools;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message || "API error");
+  return data;
+}
+
+function extractText(data){
+  return (data.content || [])
+    .filter(b=>b.type==='text')
+    .map(b=>b.text)
+    .join('\n');
+}
+
+function loadingHTML(label){
+  return `<div class="loading">${label}<span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
+}
+
+function simpleMarkdownToHTML(md){
+  let html = md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.*)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.*)$/gm,'<h3>$1</h3>')
+    .replace(/^# (.*)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^- (.*)$/gm,'<li>$1</li>')
+    .replace(/\n{2,}/g,'</p><p>');
+  html = html.replace(/(<li>.*?<\/li>)(?:\s*(?=<li>|$))/gs, m=>m); // no-op safeguard
+  html = html.replace(/(<li>[\s\S]*?<\/li>)/g, m => `<ul>${m}</ul>`);
+  html = html.replace(/<\/ul>\s*<ul>/g,'');
+  return `<p>${html}</p>`;
+}
+
+function outputWrap(id, innerHTML, plainTextForCopy){
+  const el = document.getElementById(id);
+  el.innerHTML = `
+    <div class="sheet">${innerHTML}</div>
+    <div class="sheet-actions">
+      <button onclick="copyText(this)" data-copy="${encodeURIComponent(plainTextForCopy||'')}">Copy</button>
+    </div>`;
+}
+
+function copyText(btn){
+  const txt = decodeURIComponent(btn.dataset.copy);
+  navigator.clipboard.writeText(txt).then(()=>{
+    const old = btn.textContent;
+    btn.textContent = 'Copied';
+    setTimeout(()=>btn.textContent=old, 1200);
+  });
+}
+
+// ---------- Email ----------
+async function runEmail(){
+  const purpose = document.getElementById('e-purpose').value.trim();
+  const recipient = document.getElementById('e-recipient').value.trim();
+  const tone = document.getElementById('e-tone').value;
+  const points = document.getElementById('e-points').value.trim();
+  const out = document.getElementById('e-output');
+
+  if(!purpose){ out.innerHTML = `<div class="sheet">Tell me what the email is for first.</div>`; return; }
+  out.innerHTML = loadingHTML('Drafting');
+
+  const prompt = `Write a workplace email.
+Purpose: ${purpose}
+Recipient: ${recipient || 'not specified — infer a sensible general audience'}
+Tone: ${tone}
+Key points to include: ${points || 'use your judgment based on the purpose'}
+
+Write only the email itself, starting with a subject line on the first line as "Subject: ...", then a blank line, then the email body. No preamble, no notes about what you did.`;
+
+  try{
+    const data = await callClaude([{role:'user', content: prompt}], {maxTokens:800});
+    const text = extractText(data);
+    outputWrap('e-output', `<div style="white-space:pre-wrap">${text.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`, text);
+  }catch(err){
+    out.innerHTML = `<div class="sheet">Something went wrong: ${err.message}</div>`;
+  }
+}
+
+// ---------- Meetings ----------
+async function runMeeting(){
+  const text = document.getElementById('m-text').value.trim();
+  const out = document.getElementById('m-output');
+  if(!text){ out.innerHTML = `<div class="sheet">Paste in some notes or a transcript first.</div>`; return; }
+  out.innerHTML = loadingHTML('Reading through it');
+
+  const prompt = `Summarize these meeting notes/transcript for someone who needs to act on it, not read the whole thing. Use this structure with markdown headers:
+## Summary
+(2-3 sentences on what the meeting was about and where it landed)
+## Decisions
+(bullet list — only real decisions made, skip if none)
+## Action items
+(bullet list, each as "Task — owner — due date if mentioned, else 'unspecified'")
+## Open questions
+(bullet list of anything left unresolved, skip if none)
+
+Notes:
+"""
+${text}
+"""`;
+
+  try{
+    const data = await callClaude([{role:'user', content: prompt}], {maxTokens:1000});
+    const raw = extractText(data);
+    outputWrap('m-output', simpleMarkdownToHTML(raw), raw);
+  }catch(err){
+    out.innerHTML = `<div class="sheet">Something went wrong: ${err.message}</div>`;
+  }
+}
+
+// ---------- Tasks ----------
+async function runTasks(){
+  const goal = document.getElementById('t-goal').value.trim();
+  const timeframe = document.getElementById('t-timeframe').value.trim();
+  const team = document.getElementById('t-team').value.trim();
+  const out = document.getElementById('t-output');
+  if(!goal){ out.innerHTML = `<div class="sheet">Describe the goal first.</div>`; return; }
+  out.innerHTML = loadingHTML('Breaking it down');
+
+  const sys = `You output ONLY valid JSON, nothing else — no markdown fences, no preamble. Shape:
+{"phases":[{"name":"string","tasks":[{"title":"string","detail":"short string, may be empty"}]}]}
+Keep it to 3-5 phases and roughly 3-6 tasks per phase. Be concrete and specific to the stated goal.`;
+
+  const prompt = `Goal: ${goal}
+Timeframe: ${timeframe || 'not specified'}
+Team: ${team || 'not specified'}`;
+
+  try{
+    const data = await callClaude([{role:'user', content: prompt}], {system: sys, maxTokens:1400});
+    let raw = extractText(data).trim().replace(/^```json|```$/g,'').trim();
+    let plan;
+    try{ plan = JSON.parse(raw); }catch(e){ plan = null; }
+
+    if(plan && plan.phases){
+      let html = '';
+      let plainCopy = '';
+      plan.phases.forEach(ph=>{
+        html += `<div class="phase"><h4>${ph.name}</h4>`;
+        plainCopy += `\n${ph.name.toUpperCase()}\n`;
+        (ph.tasks||[]).forEach(t=>{
+          html += `<div class="task-row"><input type="checkbox"><div><div class="t-main">${t.title}</div>${t.detail?`<div class="t-sub">${t.detail}</div>`:''}</div></div>`;
+          plainCopy += `- ${t.title}${t.detail?` (${t.detail})`:''}\n`;
+        });
+        html += `</div>`;
+      });
+      outputWrap('t-output', html, plainCopy.trim());
+    } else {
+      outputWrap('t-output', simpleMarkdownToHTML(raw), raw);
+    }
+  }catch(err){
+    out.innerHTML = `<div class="sheet">Something went wrong: ${err.message}</div>`;
+  }
+}
+
+// ---------- Research ----------
+async function runResearch(){
+  const q = document.getElementById('r-question').value.trim();
+  const out = document.getElementById('r-output');
+  if(!q){ out.innerHTML = `<div class="sheet">Ask a question first.</div>`; return; }
+  out.innerHTML = loadingHTML('Searching');
+
+  try{
+    const data = await callClaude(
+      [{role:'user', content:`Research this and answer clearly with sources: ${q}`}],
+      { tools:[{type:"web_search_20250305", name:"web_search"}], maxTokens:1400 }
+    );
+    const raw = extractText(data);
+    outputWrap('r-output', simpleMarkdownToHTML(raw) + `<div style="margin-top:10px;font-size:12px;color:var(--charcoal-soft)">Generated with live web search — verify anything you plan to rely on.</div>`, raw);
+  }catch(err){
+    out.innerHTML = `<div class="sheet">Something went wrong: ${err.message}</div>`;
+  }
+}
+
+// ---------- Chat ----------
+let chatHistory = [];
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  const win = document.getElementById('chatWindow');
+
+  win.insertAdjacentHTML('beforeend', `<div class="msg user"><div class="bubble">${msg.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`);
+  chatHistory.push({role:'user', content: msg});
+  input.value='';
+  win.scrollTop = win.scrollHeight;
+
+  const loadingId = 'load-'+Date.now();
+  win.insertAdjacentHTML('beforeend', `<div class="msg bot" id="${loadingId}"><div class="bubble">${loadingHTML('')}</div></div>`);
+  win.scrollTop = win.scrollHeight;
+
+  try{
+    const data = await callClaude(chatHistory, {
+      system: "You are a helpful, concise workplace assistant embedded in a tool called Deskclerk. Keep answers practical and to the point.",
+      maxTokens: 700
+    });
+    const text = extractText(data);
+    chatHistory.push({role:'assistant', content:text});
+    document.getElementById(loadingId).outerHTML = `<div class="msg bot"><div class="bubble">${simpleMarkdownToHTML(text)}</div></div>`;
+  }catch(err){
+    document.getElementById(loadingId).outerHTML = `<div class="msg bot"><div class="bubble">Something went wrong: ${err.message}</div></div>`;
+  }
+  win.scrollTop = win.scrollHeight;
+}
+</script>
+</body>
+</html>
